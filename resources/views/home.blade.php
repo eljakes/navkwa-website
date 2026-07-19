@@ -67,14 +67,7 @@
             <h1>Building intelligent software for <span class="grad-text">Africa&rsquo;s future.</span></h1>
             <p class="lead">We help ambitious businesses automate operations, cut costs, and scale through enterprise-grade software built to run for a decade, not a demo.</p>
             <div class="hero-actions">
-              <a href="#contact" class="btn btn-primary btn-lg">Get Started</a>
-              <a href="#contact" class="btn btn-ghost btn-lg">Book Consultation</a>
-              <a href="#work" class="play-btn">
-                <span class="play-circle">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
-                </span>
-                Watch how we work
-              </a>
+              <a href="#contact" class="btn btn-primary btn-lg">Book Consultation</a>
             </div>
             <div class="hero-strip">
               <div><span class="num font-display">10+</span><span class="lbl">SOLUTIONS SHIPPED</span></div>
