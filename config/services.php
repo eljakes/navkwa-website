@@ -36,6 +36,10 @@ return [
         'status_endpoint' => env('HUBTEL_STATUS_ENDPOINT'),
     ],
 
+    'payments' => [
+        'default_provider' => env('PAYMENT_DEFAULT_PROVIDER', 'paystack'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

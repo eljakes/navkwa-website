@@ -54,7 +54,11 @@ class BackendEndpointsTest extends TestCase
         $this->get(route('payments.create'))
             ->assertOk()
             ->assertSee('MTN MoMo')
-            ->assertSee('Visa');
+            ->assertSee('Visa')
+            ->assertDontSee('Gateway')
+            ->assertDontSee('Providers')
+            ->assertDontSee('Paystack')
+            ->assertDontSee('Hubtel');
     }
 
     public function test_payment_initialize_creates_demo_transaction_without_live_keys(): void
@@ -62,7 +66,6 @@ class BackendEndpointsTest extends TestCase
         config(['services.paystack.secret_key' => null]);
 
         $response = $this->post(route('payments.initialize'), [
-            'provider' => 'paystack',
             'payment_method' => 'mobile_money',
             'mobile_network' => 'mtn_momo',
             'amount' => '125.50',

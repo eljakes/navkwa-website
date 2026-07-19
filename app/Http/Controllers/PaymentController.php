@@ -20,6 +20,13 @@ class PaymentController extends Controller
 
     public function initialize(Request $request, PaymentGatewayManager $gateways)
     {
+        // PAYMENT PROVIDER DEFAULT:
+        // Visitors do not choose a gateway on the public form. Change
+        // PAYMENT_DEFAULT_PROVIDER in .env when switching adapters.
+        $request->merge([
+            'provider' => $request->input('provider') ?: config('services.payments.default_provider', 'paystack'),
+        ]);
+
         $validated = $request->validate([
             'provider' => ['required', Rule::in(['paystack', 'hubtel'])],
             'payment_method' => ['required', Rule::in(['mobile_money', 'card'])],

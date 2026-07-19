@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Make a Payment - Navkwa Group Ltd.</title>
-  <meta name="description" content="Pay Navkwa Group Ltd. by Ghana mobile money, Visa, or Mastercard through Hubtel or Paystack.">
+  <meta name="description" content="Pay Navkwa Group Ltd. by Ghana mobile money, Visa, or Mastercard through secure hosted checkout.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -28,7 +28,7 @@
       <div>
         <span class="eyebrow">// Secure Payments</span>
         <h1 class="font-display">Pay Navkwa Group Ltd.</h1>
-        <p>Clients can pay in Ghana cedis using MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, or Mastercard. Card details are handled by the selected payment provider's hosted checkout.</p>
+        <p>Clients can pay in Ghana cedis using MTN MoMo, Telecel Cash, AirtelTigo Money, Visa, or Mastercard. Card details are handled through secure hosted checkout.</p>
       </div>
     </section>
 
@@ -41,22 +41,11 @@
           </div>
         @endif
 
-        <div class="field-row">
-          <div>
-            <label class="field-label">Gateway</label>
-            <select class="field" name="provider" required>
-              <option value="paystack" @selected(old('provider', 'paystack') === 'paystack')>Paystack</option>
-              <option value="hubtel" @selected(old('provider') === 'hubtel')>Hubtel</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label">Payment method</label>
-            <select class="field" name="payment_method" id="paymentMethod" required>
-              <option value="mobile_money" @selected(old('payment_method', 'mobile_money') === 'mobile_money')>Mobile Money</option>
-              <option value="card" @selected(old('payment_method') === 'card')>Visa / Mastercard</option>
-            </select>
-          </div>
-        </div>
+        <label class="field-label">Payment method</label>
+        <select class="field" name="payment_method" id="paymentMethod" required>
+          <option value="mobile_money" @selected(old('payment_method', 'mobile_money') === 'mobile_money')>Mobile Money</option>
+          <option value="card" @selected(old('payment_method') === 'card')>Visa / Mastercard</option>
+        </select>
 
         <div id="mobileNetworkField">
           <label class="field-label">Mobile money network</label>
@@ -99,10 +88,6 @@
         <div class="payment-method-card">
           <strong>Debit Cards</strong>
           <span>Visa and Mastercard through hosted checkout</span>
-        </div>
-        <div class="payment-method-card">
-          <strong>Providers</strong>
-          <span>Paystack is wired directly. Hubtel is adapter-ready and configured through environment variables.</span>
         </div>
       </aside>
     </section>

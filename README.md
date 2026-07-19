@@ -46,7 +46,9 @@ Supported gateway adapters:
 - Paystack
 - Hubtel
 
-The site uses hosted checkout redirects. Do not collect raw card numbers, CVV, or card PINs on this website. Visa and Mastercard details should be entered only on the selected provider's secure checkout page.
+The public payment page does not show gateway selection to customers. Laravel uses `PAYMENT_DEFAULT_PROVIDER` behind the scenes, so developers can switch between adapters without exposing provider details in the interface.
+
+The site uses hosted checkout redirects. Do not collect raw card numbers, CVV, or card PINs on this website. Visa and Mastercard details should be entered only on the secure checkout page.
 
 ### Payment Files
 
@@ -65,6 +67,8 @@ The site uses hosted checkout redirects. Do not collect raw card numbers, CVV, o
 Add live credentials to `.env`:
 
 ```env
+PAYMENT_DEFAULT_PROVIDER=paystack
+
 PAYSTACK_PUBLIC_KEY=
 PAYSTACK_SECRET_KEY=
 PAYSTACK_BASE_URL=https://api.paystack.co
