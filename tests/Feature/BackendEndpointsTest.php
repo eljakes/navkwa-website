@@ -55,8 +55,12 @@ class BackendEndpointsTest extends TestCase
             ->assertOk()
             ->assertSee('MTN MoMo')
             ->assertSee('Visa')
+            ->assertSee('Home')
             ->assertDontSee('Gateway')
+            ->assertDontSee('Available rails')
+            ->assertDontSee('Debit Cards')
             ->assertDontSee('Providers')
+            ->assertDontSee('Website')
             ->assertDontSee('Paystack')
             ->assertDontSee('Hubtel');
     }

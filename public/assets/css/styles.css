@@ -787,7 +787,7 @@ footer{ border-top:1px solid var(--line); padding:80px 0 32px; position:relative
     var(--navy-950);
 }
 .payment-shell{
-  width:min(1180px,calc(100% - 40px));
+  width:min(860px,calc(100% - 40px));
   margin:0 auto;
   padding:140px 0 80px;
 }
@@ -807,7 +807,7 @@ footer{ border-top:1px solid var(--line); padding:80px 0 32px; position:relative
 }
 .payment-grid{
   display:grid;
-  grid-template-columns:minmax(0,1fr) 360px;
+  grid-template-columns:minmax(0,1fr);
   gap:28px;
   padding:0;
 }

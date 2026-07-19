@@ -17,7 +17,7 @@
         <a href="{{ route('home') }}" class="logo"><span class="dot"></span>Navkwa</a>
         <div class="nav-cta-group">
           <a href="{{ route('home') }}#contact" class="btn btn-ghost btn-sm">Contact</a>
-          <a href="{{ route('home') }}" class="btn btn-primary btn-sm">Website</a>
+          <a href="{{ route('home') }}" class="btn btn-primary btn-sm">Home</a>
         </div>
       </nav>
     </div>
@@ -78,18 +78,6 @@
 
         <button class="btn btn-primary btn-lg" type="submit">Continue to Secure Checkout</button>
       </form>
-
-      <aside class="payment-methods">
-        <h2 class="font-display">Available rails</h2>
-        <div class="payment-method-card">
-          <strong>Mobile Money</strong>
-          <span>MTN MoMo, Telecel Cash, AirtelTigo Money</span>
-        </div>
-        <div class="payment-method-card">
-          <strong>Debit Cards</strong>
-          <span>Visa and Mastercard through hosted checkout</span>
-        </div>
-      </aside>
     </section>
   </main>
 
