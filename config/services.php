@@ -22,6 +22,20 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'paystack' => [
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+    ],
+
+    'hubtel' => [
+        'account_number' => env('HUBTEL_ACCOUNT_NUMBER'),
+        'client_id' => env('HUBTEL_CLIENT_ID'),
+        'client_secret' => env('HUBTEL_CLIENT_SECRET'),
+        'checkout_endpoint' => env('HUBTEL_CHECKOUT_ENDPOINT'),
+        'status_endpoint' => env('HUBTEL_STATUS_ENDPOINT'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

@@ -19,7 +19,7 @@
     <section class="admin-hero">
       <div>
         <span class="eyebrow">// Backend Inbox</span>
-        <h1 class="font-display">Messages and live chat.</h1>
+        <h1 class="font-display">Messages, payments, and live chat.</h1>
       </div>
       @if(session('status'))
         <p class="admin-status">{{ session('status') }}</p>
@@ -62,6 +62,37 @@
         </div>
       </div>
 
+      <div class="admin-panel">
+        <div class="admin-panel-head">
+          <div>
+            <h2 class="font-display">Payments</h2>
+            <p>{{ $payments->count() }} recent transaction{{ $payments->count() === 1 ? '' : 's' }}</p>
+          </div>
+        </div>
+
+        <div class="admin-list">
+          @forelse($payments as $payment)
+            <article class="admin-message">
+              <div class="admin-message-head">
+                <strong>{{ $payment->reference }}</strong>
+                <span>{{ $payment->created_at->format('M j, Y g:ia') }}</span>
+              </div>
+              <p>{{ $payment->customer_name }} paid {{ $payment->currency }} {{ number_format((float) $payment->amount, 2) }} via {{ ucfirst($payment->provider) }}.</p>
+              <dl>
+                <div><dt>Status</dt><dd>{{ ucfirst($payment->status) }}</dd></div>
+                <div><dt>Method</dt><dd>{{ str_replace('_', ' ', ucfirst($payment->payment_method)) }}</dd></div>
+                <div><dt>Network</dt><dd>{{ $payment->mobile_network ? str_replace('_', ' ', strtoupper($payment->mobile_network)) : 'Card' }}</dd></div>
+                <div><dt>Email</dt><dd>{{ $payment->customer_email }}</dd></div>
+              </dl>
+            </article>
+          @empty
+            <p class="admin-empty">No payment transactions received yet.</p>
+          @endforelse
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-grid">
       <div class="admin-panel">
         <div class="admin-panel-head">
           <div>

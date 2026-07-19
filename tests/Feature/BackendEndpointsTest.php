@@ -48,4 +48,38 @@ class BackendEndpointsTest extends TestCase
             'message' => 'Can someone contact me about an ERP build?',
         ]);
     }
+
+    public function test_payment_form_loads(): void
+    {
+        $this->get(route('payments.create'))
+            ->assertOk()
+            ->assertSee('MTN MoMo')
+            ->assertSee('Visa');
+    }
+
+    public function test_payment_initialize_creates_demo_transaction_without_live_keys(): void
+    {
+        config(['services.paystack.secret_key' => null]);
+
+        $response = $this->post(route('payments.initialize'), [
+            'provider' => 'paystack',
+            'payment_method' => 'mobile_money',
+            'mobile_network' => 'mtn_momo',
+            'amount' => '125.50',
+            'customer_name' => 'Ama Owusu',
+            'customer_email' => 'ama@example.com',
+            'customer_phone' => '+233 000 000 000',
+            'description' => 'Discovery deposit',
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('payment_transactions', [
+            'provider' => 'paystack',
+            'payment_method' => 'mobile_money',
+            'mobile_network' => 'mtn_momo',
+            'amount' => '125.50',
+            'status' => 'demo',
+        ]);
+    }
 }

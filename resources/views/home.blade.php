@@ -41,6 +41,7 @@
           <li><a href="#industries">Industries</a></li>
           <li><a href="#roadmap">Products</a></li>
           <li><a href="#work">Work</a></li>
+          <li><a href="{{ route('payments.create') }}">Payments</a></li>
           <li><a href="#contact">Contact</a></li>
         </ul>
         <div class="nav-cta-group">
