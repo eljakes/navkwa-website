@@ -575,6 +575,7 @@ section.tight{ padding:90px 0; }
 .cta-actions{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
 
 .contact-grid{ display:grid; grid-template-columns:0.9fr 1.1fr; gap:64px; }
+#contact-message{scroll-margin-top:120px;}
 @media(max-width:900px){ .contact-grid{ grid-template-columns:1fr; gap:48px; } }
 .contact-info-item{ display:flex; gap:16px; padding:20px 0; border-top:1px solid var(--line); }
 .contact-info-item:last-child{ border-bottom:1px solid var(--line); }
@@ -930,7 +931,7 @@ footer{ border-top:1px solid var(--line); padding:80px 0 32px; position:relative
   .admin-hero{align-items:start; flex-direction:column;}
   .admin-grid{grid-template-columns:1fr;}
   .admin-message dl{grid-template-columns:1fr;}
-  .payment-shell{width:min(100% - 28px,1180px);}
+  .payment-shell{width:min(100% - 28px,860px);}
   .payment-grid{grid-template-columns:1fr;}
   .payment-form,
   .payment-methods,

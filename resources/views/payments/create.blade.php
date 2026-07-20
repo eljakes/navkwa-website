@@ -16,7 +16,6 @@
       <nav>
         <a href="{{ route('home') }}" class="logo"><span class="dot"></span>Navkwa</a>
         <div class="nav-cta-group">
-          <a href="{{ route('home') }}#contact" class="btn btn-ghost btn-sm">Contact</a>
           <a href="{{ route('home') }}" class="btn btn-primary btn-sm">Home</a>
         </div>
       </nav>

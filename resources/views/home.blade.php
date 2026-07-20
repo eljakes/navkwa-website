@@ -376,7 +376,7 @@
           <h2>Tell us what you&rsquo;re building.</h2>
           <p>Three short steps. We&rsquo;ll come back to you within one business day with next steps.</p>
         </div>
-        <div class="contact-grid">
+        <div class="contact-grid" id="contact-message">
           <div data-reveal>
             <div class="contact-info-item">
               <div class="ci-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg></div>
