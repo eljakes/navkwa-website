@@ -16,8 +16,7 @@
       @csrf
       <a href="{{ route('home') }}" class="logo"><span class="dot"></span>Navkwa</a>
       <span class="eyebrow">// Admin Portal</span>
-      <h1 class="font-display">Sign in to operations.</h1>
-      <p>Use your individual staff account. Admin pages are marked noindex and protected by Laravel authentication.</p>
+      <p>Use your individual staff account to access Navkwa operations.</p>
 
       @if($errors->any())
         <div class="payment-alert">{{ $errors->first() }}</div>
