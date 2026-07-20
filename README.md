@@ -11,7 +11,7 @@ Navkwa works with organizations that need software built around their real opera
 - A contact form for project inquiries.
 - A live chat widget that stores conversations.
 - A payment page for Ghana Mobile Money and Visa/Mastercard payments.
-- A backend inbox for reviewing contact messages, chat transcripts, and payment records.
+- A protected admin portal for managing enquiries, leads, consultations, content, support records, careers, subscribers, users, settings, and audit logs.
 
 ## Carousel Images
 
@@ -26,6 +26,58 @@ Supported formats:
 The carousel loads images from that folder automatically. File names are sorted naturally, so names like `01-office.jpg`, `02-dashboard.jpg`, and `03-team.jpg` will appear in that order.
 
 After adding or replacing images, refresh the website preview.
+
+## Admin Portal
+
+Admin portal:
+
+`http://127.0.0.1:8000/admin`
+
+The admin area is protected by Laravel authentication and includes `noindex, nofollow` on admin pages.
+
+Set the first admin account in `.env` before seeding:
+
+```env
+ADMIN_NAME="Navkwa Administrator"
+ADMIN_EMAIL=admin@navkwagroup.com
+ADMIN_PASSWORD=change-me-before-production
+ADMIN_PHONE=
+```
+
+Then run:
+
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+Do not use the example password in production. Change it immediately after creating the first account.
+
+### Admin Modules
+
+The portal stores real records in SQL tables. It does not use demo dashboard data.
+
+- Dashboard overview: enquiries, unread messages, leads awaiting response, consultations, subscribers, applications, website visits, conversion rate, charts, alerts, and activity logs.
+- Enquiries and contact messages: search, filter, read/unread status, lead status, staff assignment, internal notes, email reply links, CSV export, archive/spam workflow, and lead conversion.
+- Lead management: sales pipeline stages, estimated value, probability, follow-up dates, assignment, notes, and activity history.
+- Consultation bookings: client details, service, meeting date/time, meeting link, consultant assignment, status, client notes, and internal notes.
+- Website content management: pages, services, industries, portfolio, case studies, testimonials, FAQs, blog posts, careers, footer content, calls to action, SEO fields, draft/published status, display order, and publish dates.
+- Support: stored live-chat sessions and payment transaction monitoring.
+- Careers: job openings and job applications with recruiter assignment and candidate statuses.
+- Marketing: newsletter subscriber records.
+- Management: staff users, roles, account status, and last login.
+- System: company settings, notification settings, chat settings, maintenance flag, activity logs, and audit trail.
+
+### Admin Database Files
+
+- `database/migrations/2026_07_20_000000_create_admin_portal_tables.php` - admin portal schema.
+- `app/Http/Controllers/AdminAuthController.php` - admin login/logout.
+- `app/Http/Controllers/AdminController.php` - dashboard and module actions.
+- `resources/views/admin/inbox.blade.php` - admin dashboard UI.
+- `resources/views/admin/login.blade.php` - admin login UI.
+- `app/Http/Middleware/TrackWebsiteVisit.php` - real website visit tracking.
+
+Company email, phone, office address, and business hours saved in Admin Settings are read by the public homepage contact section through `app/Http/Controllers/HomeController.php`.
 
 ## Payments
 
@@ -176,6 +228,12 @@ Run database migrations:
 php artisan migrate
 ```
 
+Seed the first admin account after setting `ADMIN_PASSWORD`:
+
+```bash
+php artisan db:seed
+```
+
 Start the Laravel server:
 
 ```bash
@@ -186,6 +244,6 @@ Open the website:
 
 `http://127.0.0.1:8000`
 
-Open the backend inbox:
+Open the admin portal:
 
 `http://127.0.0.1:8000/admin`

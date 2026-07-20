@@ -10,5 +10,15 @@ class ChatMessage extends Model
         'session_id',
         'sender',
         'message',
+        'is_read',
+        'assigned_to',
+        'internal_notes',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_read' => 'boolean',
+        ];
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\ChatMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -43,6 +44,16 @@ class ChatMessageController extends Controller
             'session_id' => $sessionId,
             'sender' => 'support',
             'message' => 'Thanks. Your message has been received by Navkwa. Please leave your email or phone number if you want the team to follow up directly.',
+        ]);
+
+        ActivityLog::create([
+            'action' => 'New chat message received',
+            'module' => 'Support',
+            'record_type' => ChatMessage::class,
+            'record_id' => $userMessage->id,
+            'new_values' => ['session_id' => $sessionId],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         return response()->json([

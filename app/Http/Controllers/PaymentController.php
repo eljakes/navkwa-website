@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\PaymentTransaction;
-use App\Payments\HubtelGateway;
 use App\Payments\PaymentGatewayManager;
 use App\Payments\PaystackGateway;
 use Illuminate\Http\Request;
@@ -43,6 +43,16 @@ class PaymentController extends Controller
             'reference' => 'NVK-'.now()->format('YmdHis').'-'.Str::upper(Str::random(6)),
             'currency' => 'GHS',
             'status' => 'pending',
+        ]);
+
+        ActivityLog::create([
+            'action' => 'Payment checkout initialized',
+            'module' => 'Payments',
+            'record_type' => PaymentTransaction::class,
+            'record_id' => $payment->id,
+            'new_values' => $payment->only(['reference', 'payment_method', 'amount', 'customer_email']),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         try {

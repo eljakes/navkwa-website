@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminSetting;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
@@ -24,6 +25,7 @@ class HomeController extends Controller
 
         return view('home', [
             'carouselSlides' => $carouselSlides,
+            'siteSettings' => AdminSetting::query()->pluck('value', 'key'),
         ]);
     }
 }

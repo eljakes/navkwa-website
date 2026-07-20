@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\ContactMessage;
 use Illuminate\Http\Request;
 
@@ -29,6 +30,15 @@ class ContactMessageController extends Controller
         unset($validated['attachment']);
 
         $message = ContactMessage::create($validated);
+        ActivityLog::create([
+            'action' => 'New contact enquiry submitted',
+            'module' => 'Enquiries',
+            'record_type' => ContactMessage::class,
+            'record_id' => $message->id,
+            'new_values' => $message->only(['name', 'email', 'service', 'country']),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return response()->json([
             'message' => 'Your request has been received.',
