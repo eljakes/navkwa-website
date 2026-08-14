@@ -1,0 +1,14 @@
+/var/www/navkwa-build/shared/storage/logs/*.log
+/var/www/navkwa-build/shared/logs/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 www-data adm
+    sharedscripts
+    postrotate
+        systemctl reload php8.3-fpm >/dev/null 2>&1 || true
+    endscript
+}

@@ -7,11 +7,54 @@ Navkwa works with organizations that need software built around their real opera
 ## What The Website Includes
 
 - A modern company homepage for Navkwa Group Ltd.
-- A first-page carousel slider for hero images.
+- A bright homepage video hero and a dedicated About hero.
 - A contact form for project inquiries.
 - A live chat widget that stores conversations.
 - A payment page for Ghana Mobile Money and Visa/Mastercard payments.
 - A protected admin portal for managing enquiries, leads, consultations, content, support records, careers, subscribers, users, settings, and audit logs.
+
+## Production Deployment
+
+The production standard is documented in:
+
+`docs/production-manual.md`
+
+It covers the target architecture:
+
+`Cloudflare -> Ubuntu 24.04 -> UFW -> Fail2Ban -> Nginx -> PHP-FPM -> Laravel -> PostgreSQL -> Redis -> Queue Workers -> Scheduler`
+
+Deployment templates live in:
+
+`deploy/`
+
+That folder includes Nginx, Supervisor, cron scheduler, Fail2Ban, logrotate, and release-based deployment examples. Production environment values should start from `.env.production.example`, then be edited on the server inside the app's `shared/.env` file.
+
+Production server inventory:
+
+`deploy/server/navkwa-prod-01.md`
+
+Current production server:
+
+```text
+Hetzner Cloud: navkwa-prod-01
+Public IP: 49.12.103.75
+Location: Falkenstein, eu-central
+Plan: CPX22, x86, 80 GB
+```
+
+The intended production layout is:
+
+```text
+/var/www/navkwa-website/current -> releases/YYYYMMDD_HHMMSS
+/var/www/navkwa-website/releases/
+/var/www/navkwa-website/shared/.env
+/var/www/navkwa-website/shared/storage/
+/var/www/navkwa-website/shared/logs/
+```
+
+The health check endpoint is:
+
+`/health`
 
 ## Carousel Images
 
@@ -111,7 +154,7 @@ The site uses hosted checkout redirects. Do not collect raw card numbers, CVV, o
 - `app/Payments/HubtelGateway.php` - Hubtel API integration. Search for `HUBTEL INTEGRATION POINT`.
 - `resources/views/payments/create.blade.php` - public payment form.
 - `resources/views/payments/result.blade.php` - callback result page.
-- `resources/views/payments/demo.blade.php` - local fallback page when live API keys are not configured.
+- `resources/views/payments/navkwa-build.blade.php` - Navkwa Build subscription payment details.
 - `database/migrations/2026_07_19_000000_create_payment_transactions_table.php` - payment table.
 
 ### Environment Variables

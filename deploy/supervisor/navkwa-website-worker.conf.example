@@ -1,0 +1,15 @@
+[program:navkwa-website-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/navkwa-website/current/artisan queue:work redis --sleep=3 --tries=3 --timeout=90 --max-time=3600
+directory=/var/www/navkwa-website/current
+user=www-data
+numprocs=2
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stopwaitsecs=3600
+redirect_stderr=true
+stdout_logfile=/var/www/navkwa-website/shared/logs/queue-worker.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=10

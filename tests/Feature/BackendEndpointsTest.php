@@ -15,6 +15,16 @@ class BackendEndpointsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_health_endpoint_is_available_for_monitoring(): void
+    {
+        $this->getJson(route('health'))
+            ->assertOk()
+            ->assertJson([
+                'status' => 'ok',
+                'service' => 'navkwa-website',
+            ]);
+    }
+
     public function test_contact_messages_are_saved(): void
     {
         $response = $this->postJson(route('contact.store'), [
