@@ -90,23 +90,74 @@ class AdminController extends Controller
         'Rejected',
     ];
 
-    private const USER_ROLES = [
-        'Super Admin',
-        'Administrator',
-        'Sales Manager',
-        'Sales Agent',
-        'Content Manager',
-        'Support Agent',
-        'Recruiter',
-        'Viewer',
-    ];
+    private const USER_ROLES = User::ADMIN_ROLES;
 
     public function index(Request $request)
+    {
+        return $this->renderAdminPage($request, 'dashboard');
+    }
+
+    public function enquiries(Request $request)
+    {
+        return $this->renderAdminPage($request, 'enquiries');
+    }
+
+    public function leads(Request $request)
+    {
+        return $this->renderAdminPage($request, 'leads');
+    }
+
+    public function consultations(Request $request)
+    {
+        return $this->renderAdminPage($request, 'consultations');
+    }
+
+    public function content(Request $request)
+    {
+        return $this->renderAdminPage($request, 'content');
+    }
+
+    public function support()
+    {
+        return redirect()->route('admin.live-chats.index');
+    }
+
+    public function liveChats(Request $request)
+    {
+        return $this->renderAdminPage($request, 'live-chats');
+    }
+
+    public function payments(Request $request)
+    {
+        return $this->renderAdminPage($request, 'payments');
+    }
+
+    public function careers(Request $request)
+    {
+        return $this->renderAdminPage($request, 'careers');
+    }
+
+    public function marketing(Request $request)
+    {
+        return $this->renderAdminPage($request, 'marketing');
+    }
+
+    public function management(Request $request)
+    {
+        return $this->renderAdminPage($request, 'management');
+    }
+
+    public function system(Request $request)
+    {
+        return $this->renderAdminPage($request, 'system');
+    }
+
+    private function renderAdminPage(Request $request, string $section)
     {
         $enquiryQuery = $this->filteredEnquiries($request)->with('lead')->latest();
 
         return view('admin.inbox', [
-            'section' => $request->query('section', 'dashboard'),
+            'section' => $section,
             'metrics' => $this->metrics(),
             'charts' => $this->charts(),
             'alerts' => $this->systemAlerts(),
@@ -131,6 +182,7 @@ class AdminController extends Controller
             'applicationStatuses' => self::APPLICATION_STATUSES,
             'chatSessions' => ChatMessage::latest()->get()->groupBy('session_id'),
             'payments' => PaymentTransaction::latest()->take(16)->get(),
+            'paymentStats' => $this->paymentStats(),
             'users' => User::latest()->get(),
             'userRoles' => self::USER_ROLES,
             'settings' => AdminSetting::query()->pluck('value', 'key'),
@@ -388,7 +440,35 @@ class AdminController extends Controller
         ChatMessage::where('session_id', $sessionId)->update($validated);
         $this->recordActivity($request, 'Updated chat session', 'Support', null, [], ['session_id' => $sessionId] + $validated);
 
-        return $this->backTo('support', 'Chat session updated.');
+        return $this->backTo('live-chats', 'Chat session updated.');
+    }
+
+    public function storeChatReply(Request $request, string $sessionId)
+    {
+        $validated = $request->validate([
+            'message' => ['required', 'string', 'max:2000'],
+        ]);
+
+        abort_unless(ChatMessage::where('session_id', $sessionId)->exists(), 404);
+
+        $reply = ChatMessage::create([
+            'session_id' => $sessionId,
+            'sender' => 'support',
+            'message' => $validated['message'],
+            'is_read' => true,
+            'assigned_to' => $request->user()?->name,
+        ]);
+
+        ChatMessage::where('session_id', $sessionId)
+            ->where('sender', 'user')
+            ->update(['is_read' => true]);
+
+        $this->recordActivity($request, 'Sent live chat reply', 'Support', $reply, [], [
+            'session_id' => $sessionId,
+            'message_id' => $reply->id,
+        ]);
+
+        return $this->backTo('live-chats', 'Reply sent to the website chat.');
     }
 
     public function storeUser(Request $request)
@@ -411,6 +491,20 @@ class AdminController extends Controller
         $this->recordActivity($request, 'Updated staff user', 'Management', $user, $before, $user->fresh()->toArray());
 
         return $this->backTo('management', 'Staff user updated.');
+    }
+
+    public function destroyUser(Request $request, User $user)
+    {
+        if ($request->user()?->is($user)) {
+            return $this->backTo('management', 'You cannot delete your own signed-in account.');
+        }
+
+        $before = $user->toArray();
+        $user->delete();
+
+        $this->recordActivity($request, 'Deleted staff user', 'Management', null, $before);
+
+        return redirect()->route('admin.management.index');
     }
 
     public function updateSettings(Request $request)
@@ -469,11 +563,17 @@ class AdminController extends Controller
         $websiteVisits = WebsiteVisit::count();
         $unreadEnquiries = ContactMessage::where('is_read', false)->count();
         $unreadChats = ChatMessage::where('sender', 'user')->where('is_read', false)->count();
+        $paidRevenue = (float) PaymentTransaction::where('status', 'paid')->sum('amount');
+        $pendingPayments = PaymentTransaction::where('status', 'pending')->count();
+        $navkwaBuildPayments = PaymentTransaction::where('product', 'navkwa_build')->count();
 
         return [
             ['label' => 'Total Enquiries', 'value' => $totalEnquiries, 'hint' => 'All submitted contact requests'],
             ['label' => 'New Enquiries Today', 'value' => ContactMessage::whereDate('created_at', today())->count(), 'hint' => 'Needs same-day triage'],
             ['label' => 'Unread Messages', 'value' => $unreadEnquiries + $unreadChats, 'hint' => $unreadEnquiries.' enquiries, '.$unreadChats.' chats'],
+            ['label' => 'Revenue Collected', 'value' => 'GH₵'.number_format($paidRevenue, 2), 'hint' => 'Confirmed paid transactions'],
+            ['label' => 'Pending Payments', 'value' => $pendingPayments, 'hint' => 'Awaiting provider confirmation'],
+            ['label' => 'Navkwa Build Payments', 'value' => $navkwaBuildPayments, 'hint' => 'Subscription checkouts started'],
             ['label' => 'Leads Awaiting Response', 'value' => Lead::whereNotIn('sales_stage', ['Closed Won', 'Closed Lost'])->where(function ($query) {
                 $query->whereNull('next_follow_up_date')->orWhereDate('next_follow_up_date', '<=', today());
             })->count(), 'hint' => 'Follow-up due now'],
@@ -493,8 +593,24 @@ class AdminController extends Controller
             'trafficOverTime' => $this->dailySeries(WebsiteVisit::class, 'visited_at'),
             'enquiriesByService' => $this->groupedCounts(ContactMessage::class, 'service', 'Not selected'),
             'leadsByStatus' => $this->groupedCounts(Lead::class, 'sales_stage', 'No stage'),
+            'paymentsByStatus' => $this->groupedCounts(PaymentTransaction::class, 'status', 'Unknown status'),
+            'paymentsByProduct' => $this->groupedCounts(PaymentTransaction::class, 'product', 'General payment'),
             'mostVisitedPages' => $this->groupedCounts(WebsiteVisit::class, 'path', 'Unknown page'),
             'enquiriesByCountry' => $this->groupedCounts(ContactMessage::class, 'country', 'Not provided'),
+        ];
+    }
+
+    private function paymentStats(): array
+    {
+        $paidRevenue = (float) PaymentTransaction::where('status', 'paid')->sum('amount');
+        $navkwaBuildRevenue = (float) PaymentTransaction::where('product', 'navkwa_build')->where('status', 'paid')->sum('amount');
+
+        return [
+            ['label' => 'Revenue Collected', 'value' => 'GH₵'.number_format($paidRevenue, 2), 'hint' => 'All confirmed paid transactions'],
+            ['label' => 'Navkwa Build Revenue', 'value' => 'GH₵'.number_format($navkwaBuildRevenue, 2), 'hint' => 'Confirmed subscription revenue'],
+            ['label' => 'Subscription Checkouts', 'value' => PaymentTransaction::where('product', 'navkwa_build')->count(), 'hint' => 'Navkwa Build payment attempts'],
+            ['label' => 'Pending Payments', 'value' => PaymentTransaction::where('status', 'pending')->count(), 'hint' => 'Awaiting confirmation'],
+            ['label' => 'Failed Payments', 'value' => PaymentTransaction::where('status', 'failed')->count(), 'hint' => 'Requires follow-up'],
         ];
     }
 
@@ -544,8 +660,18 @@ class AdminController extends Controller
             $alerts->push($unread.' enquiry message'.($unread === 1 ? ' is' : 's are').' unread.');
         }
 
-        if (blank(config('services.paystack.secret_key')) && blank(config('services.hubtel.client_secret'))) {
-            $alerts->push('Live payment credentials are not configured yet.');
+        $paystackReady = filled(config('services.paystack.secret_key'));
+        $hubtelReady = filled(config('services.hubtel.account_number'))
+            && filled(config('services.hubtel.client_id'))
+            && filled(config('services.hubtel.client_secret'))
+            && filled(config('services.hubtel.checkout_endpoint'));
+
+        if (! $paystackReady) {
+            $alerts->push('Paystack live credentials are not configured.');
+        }
+
+        if (! $hubtelReady) {
+            $alerts->push('Hubtel checkout credentials are not configured.');
         }
 
         return $alerts;
@@ -663,7 +789,21 @@ class AdminController extends Controller
 
     private function backTo(string $section, string $status)
     {
-        return redirect()->route('admin.dashboard', ['section' => $section])->with('status', $status);
+        $routes = [
+            'dashboard' => 'admin.dashboard',
+            'enquiries' => 'admin.enquiries.index',
+            'leads' => 'admin.leads.index',
+            'consultations' => 'admin.consultations.index',
+            'content' => 'admin.content.index',
+            'live-chats' => 'admin.live-chats.index',
+            'payments' => 'admin.payments.index',
+            'careers' => 'admin.careers.index',
+            'marketing' => 'admin.marketing.index',
+            'management' => 'admin.management.index',
+            'system' => 'admin.system.index',
+        ];
+
+        return redirect()->route($routes[$section] ?? 'admin.dashboard')->with('status', $status);
     }
 
     private function recordActivity(

@@ -10,6 +10,8 @@ class ChatMessage extends Model
         'session_id',
         'sender',
         'message',
+        'source_url',
+        'source_title',
         'is_read',
         'assigned_to',
         'internal_notes',

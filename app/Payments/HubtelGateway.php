@@ -4,7 +4,6 @@ namespace App\Payments;
 
 use App\Models\PaymentTransaction;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 use RuntimeException;
 
 class HubtelGateway implements PaymentGateway
@@ -14,23 +13,24 @@ class HubtelGateway implements PaymentGateway
         $endpoint = config('services.hubtel.checkout_endpoint');
         $clientId = config('services.hubtel.client_id');
         $clientSecret = config('services.hubtel.client_secret');
+        $accountNumber = config('services.hubtel.account_number');
 
-        if (blank($endpoint) || blank($clientId) || blank($clientSecret)) {
-            return $this->demoResponse($payment, 'Hubtel credentials or checkout endpoint are not configured.');
+        if (blank($endpoint) || blank($clientId) || blank($clientSecret) || blank($accountNumber)) {
+            throw new RuntimeException('Hubtel checkout credentials are not configured.');
         }
 
-        // HUBTEL INTEGRATION POINT:
-        // Confirm the exact merchant checkout endpoint and payload keys from the
-        // Hubtel developer portal for this merchant account, then adjust only this
-        // payload/parser if Hubtel provides account-specific field names.
         $payload = [
             'totalAmount' => (float) $payment->amount,
             'description' => $payment->description ?: 'Navkwa Group Ltd. payment',
-            'callbackUrl' => route('payments.hubtel.webhook'),
-            'returnUrl' => route('payments.hubtel.callback'),
-            'cancellationUrl' => route('payments.create'),
+            'callbackUrl' => route('payments.hubtel.webhook', absolute: true),
+            'returnUrl' => route('payments.hubtel.callback', absolute: true),
+            'cancellationUrl' => route('payments.create', absolute: true),
             'clientReference' => $payment->reference,
-            'merchantAccountNumber' => config('services.hubtel.account_number'),
+            'merchantAccountNumber' => $accountNumber,
+            'currency' => $payment->currency,
+            'product' => $payment->product,
+            'plan' => $payment->plan,
+            'billingCycle' => $payment->billing_cycle,
             'customerName' => $payment->customer_name,
             'customerEmail' => $payment->customer_email,
             'customerPhoneNumber' => $payment->customer_phone,
@@ -38,12 +38,16 @@ class HubtelGateway implements PaymentGateway
             'mobileNetwork' => $payment->mobile_network,
         ];
 
-        $response = Http::withBasicAuth($clientId, $clientSecret)
+        $response = Http::timeout(20)
+            ->retry(2, 250)
+            ->withBasicAuth($clientId, $clientSecret)
             ->acceptJson()
             ->post($endpoint, $payload);
 
         if (! $response->successful()) {
-            throw new RuntimeException(data_get($response->json(), 'Message', 'Hubtel could not initialize this payment.'));
+            throw new RuntimeException(data_get($response->json(), 'Message')
+                ?? data_get($response->json(), 'message')
+                ?? 'Hubtel could not initialize this payment.');
         }
 
         $json = $response->json();
@@ -51,27 +55,23 @@ class HubtelGateway implements PaymentGateway
             ?? data_get($json, 'Data.CheckoutUrl')
             ?? data_get($json, 'data.authorizationUrl')
             ?? data_get($json, 'Data.AuthorizationUrl')
+            ?? data_get($json, 'data.checkout_url')
+            ?? data_get($json, 'Data.CheckoutURL')
             ?? data_get($json, 'checkoutUrl')
-            ?? data_get($json, 'CheckoutUrl');
+            ?? data_get($json, 'CheckoutUrl')
+            ?? data_get($json, 'checkout_url');
 
         if (blank($checkoutUrl)) {
-            throw new RuntimeException('Hubtel response did not include a checkout URL. Update app/Payments/HubtelGateway.php to match the merchant response payload.');
+            throw new RuntimeException('Hubtel did not return a checkout URL.');
         }
 
         return new PaymentGatewayResponse(
             checkoutUrl: $checkoutUrl,
-            providerReference: data_get($json, 'data.checkoutId') ?? data_get($json, 'Data.CheckoutId'),
+            providerReference: data_get($json, 'data.checkoutId')
+                ?? data_get($json, 'Data.CheckoutId')
+                ?? data_get($json, 'data.transactionId')
+                ?? data_get($json, 'Data.TransactionId'),
             payload: $json,
-        );
-    }
-
-    private function demoResponse(PaymentTransaction $payment, string $reason): PaymentGatewayResponse
-    {
-        return new PaymentGatewayResponse(
-            checkoutUrl: route('payments.demo', $payment),
-            providerReference: 'demo-'.Str::lower($payment->reference),
-            payload: ['mode' => 'demo', 'reason' => $reason],
-            status: 'demo',
         );
     }
 }

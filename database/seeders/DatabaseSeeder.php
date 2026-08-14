@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             User::updateOrCreate(
                 ['email' => $adminEmail],
                 [
-                    'name' => env('ADMIN_NAME', 'Navkwa Administrator'),
+                    'name' => env('ADMIN_NAME', 'Administrator'),
                     'phone' => env('ADMIN_PHONE'),
                     'job_title' => 'Administrator',
                     'department' => 'Management',

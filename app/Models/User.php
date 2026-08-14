@@ -28,6 +28,23 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ADMIN_ROLES = [
+        'Super Admin',
+        'Administrator',
+        'Sales Manager',
+        'Sales Agent',
+        'Content Manager',
+        'Support Agent',
+        'Recruiter',
+        'Viewer',
+    ];
+
+    public function isAdminUser(): bool
+    {
+        return $this->account_status === 'active'
+            && in_array($this->role, self::ADMIN_ROLES, true);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

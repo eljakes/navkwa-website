@@ -4,7 +4,6 @@ namespace App\Payments;
 
 use App\Models\PaymentTransaction;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 use RuntimeException;
 
 class PaystackGateway implements PaymentGateway
@@ -14,32 +13,38 @@ class PaystackGateway implements PaymentGateway
         $secretKey = config('services.paystack.secret_key');
         $baseUrl = rtrim(config('services.paystack.base_url'), '/');
 
-        // PAYSTACK INTEGRATION POINT:
-        // This uses Paystack's hosted Checkout initialize endpoint. Keep card
-        // details off this server; Paystack collects Visa/Mastercard details.
         if (blank($secretKey)) {
-            return $this->demoResponse($payment, 'Missing PAYSTACK_SECRET_KEY');
+            throw new RuntimeException('PAYSTACK_SECRET_KEY is not configured.');
         }
 
-        $response = Http::withToken($secretKey)
+        $response = Http::timeout(20)
+            ->retry(2, 250)
+            ->withToken($secretKey)
             ->acceptJson()
             ->post($baseUrl.'/transaction/initialize', [
                 'email' => $payment->customer_email,
                 'amount' => (string) $payment->amountInSubunits(),
                 'currency' => $payment->currency,
                 'reference' => $payment->reference,
-                'callback_url' => route('payments.paystack.callback'),
+                'callback_url' => route('payments.paystack.callback', absolute: true),
                 'channels' => [$payment->payment_method === 'card' ? 'card' : 'mobile_money'],
-                'metadata' => [
+                'metadata' => json_encode([
+                    'product' => $payment->product,
+                    'plan' => $payment->plan,
+                    'billing_cycle' => $payment->billing_cycle,
                     'customer_name' => $payment->customer_name,
                     'customer_phone' => $payment->customer_phone,
                     'mobile_network' => $payment->mobile_network,
                     'description' => $payment->description,
-                ],
+                ]),
             ]);
 
         if (! $response->successful() || ! data_get($response->json(), 'status')) {
             throw new RuntimeException(data_get($response->json(), 'message', 'Paystack could not initialize this payment.'));
+        }
+
+        if (blank(data_get($response->json(), 'data.authorization_url'))) {
+            throw new RuntimeException('Paystack did not return an authorization URL.');
         }
 
         return new PaymentGatewayResponse(
@@ -55,12 +60,18 @@ class PaystackGateway implements PaymentGateway
         $baseUrl = rtrim(config('services.paystack.base_url'), '/');
 
         if (blank($secretKey)) {
-            return ['status' => false, 'message' => 'PAYSTACK_SECRET_KEY is not configured.'];
+            throw new RuntimeException('PAYSTACK_SECRET_KEY is not configured.');
         }
 
-        $response = Http::withToken($secretKey)
+        $response = Http::timeout(20)
+            ->retry(2, 250)
+            ->withToken($secretKey)
             ->acceptJson()
             ->get($baseUrl.'/transaction/verify/'.$reference);
+
+        if (! $response->successful()) {
+            throw new RuntimeException(data_get($response->json(), 'message', 'Paystack could not verify this payment.'));
+        }
 
         return $response->json();
     }
@@ -72,15 +83,5 @@ class PaystackGateway implements PaymentGateway
         return filled($secretKey)
             && filled($signature)
             && hash_equals(hash_hmac('sha512', $payload, $secretKey), $signature);
-    }
-
-    private function demoResponse(PaymentTransaction $payment, string $reason): PaymentGatewayResponse
-    {
-        return new PaymentGatewayResponse(
-            checkoutUrl: route('payments.demo', $payment),
-            providerReference: 'demo-'.Str::lower($payment->reference),
-            payload: ['mode' => 'demo', 'reason' => $reason],
-            status: 'demo',
-        );
     }
 }

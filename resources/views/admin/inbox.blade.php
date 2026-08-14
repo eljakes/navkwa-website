@@ -5,10 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>Navkwa Admin Portal</title>
+  <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+  <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
+  <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}">
+  <script defer src="{{ asset('assets/js/main.js') }}"></script>
 </head>
 <body class="admin-page">
   @php
@@ -16,30 +20,37 @@
     $chartMax = fn ($items) => max(1, collect($items)->max('value') ?: 1);
     $chartHasData = fn ($items) => collect($items)->sum('value') > 0;
     $navGroups = [
-      'Dashboard' => ['dashboard' => 'Overview'],
-      'Sales' => ['enquiries' => 'Enquiries', 'leads' => 'Leads', 'consultations' => 'Consultations'],
-      'Content' => ['content' => 'Website Content'],
-      'Support' => ['support' => 'Live Chat & Payments'],
-      'Careers' => ['careers' => 'Jobs & Applications'],
-      'Marketing' => ['marketing' => 'Subscribers'],
-      'Management' => ['management' => 'Users & Roles'],
-      'System' => ['system' => 'Settings & Logs'],
+      'Dashboard' => ['dashboard' => ['label' => 'Overview', 'route' => 'admin.dashboard']],
+      'Sales' => [
+        'enquiries' => ['label' => 'Enquiries', 'route' => 'admin.enquiries.index'],
+        'leads' => ['label' => 'Leads', 'route' => 'admin.leads.index'],
+        'consultations' => ['label' => 'Consultations', 'route' => 'admin.consultations.index'],
+      ],
+      'Content' => ['content' => ['label' => 'Website Content', 'route' => 'admin.content.index']],
+      'Support' => ['live-chats' => ['label' => 'Live Chats', 'route' => 'admin.live-chats.index']],
+      'Finance' => ['payments' => ['label' => 'Payments', 'route' => 'admin.payments.index']],
+      'Careers' => ['careers' => ['label' => 'Jobs & Applications', 'route' => 'admin.careers.index']],
+      'Marketing' => ['marketing' => ['label' => 'Subscribers', 'route' => 'admin.marketing.index']],
+      'Management' => ['management' => ['label' => 'Users & Roles', 'route' => 'admin.management.index']],
+      'System' => ['system' => ['label' => 'Settings & Logs', 'route' => 'admin.system.index']],
     ];
   @endphp
 
   <main class="admin-app">
     <aside class="admin-sidebar">
-      <a href="{{ route('home') }}" class="logo"><span class="dot"></span>Navkwa</a>
-      <div class="admin-user-card">
-        <strong>{{ auth()->user()->name }}</strong>
-        <span>{{ auth()->user()->role ?? 'Administrator' }}</span>
+      <div class="admin-sidebar-identity">
+        <a href="{{ route('home') }}" class="logo"><span class="dot"></span>Navkwa</a>
+        <div class="admin-user-card">
+          <strong>{{ \Illuminate\Support\Str::of(auth()->user()->name)->replaceStart('Navkwa ', '') }}</strong>
+          <span>{{ auth()->user()->role ?? 'Administrator' }}</span>
+        </div>
       </div>
 
       <nav class="admin-side-nav" aria-label="Admin portal navigation">
         @foreach($navGroups as $group => $items)
           <p>{{ $group }}</p>
-          @foreach($items as $target => $label)
-            <a href="#{{ $target }}">{{ $label }}</a>
+          @foreach($items as $target => $item)
+            <a href="{{ route($item['route']) }}" @class(['active' => $section === $target]) @if($section === $target) aria-current="page" @endif>{{ $item['label'] }}</a>
           @endforeach
         @endforeach
       </nav>
@@ -52,13 +63,12 @@
 
     <div class="admin-main">
       <header class="admin-topbar">
-        <div>
+        <div class="admin-top-copy">
           <span class="eyebrow">// Operations Portal</span>
-          <h1 class="font-display">Navkwa admin dashboard</h1>
+          <strong>Navkwa Admin</strong>
         </div>
         <div class="admin-top-actions">
-          <form class="admin-search" method="GET" action="{{ route('admin.dashboard') }}">
-            <input type="hidden" name="section" value="enquiries">
+          <form class="admin-search" method="GET" action="{{ route('admin.enquiries.index') }}">
             <input name="q" value="{{ request('q') }}" placeholder="Search enquiries">
             <button type="submit">Search</button>
           </form>
@@ -74,6 +84,7 @@
         <div class="payment-alert">{{ $errors->first() }}</div>
       @endif
 
+      @if($section === 'dashboard')
       <section class="admin-section" id="dashboard">
         <div class="admin-section-head">
           <div>
@@ -98,6 +109,8 @@
             'Website traffic trends' => $charts['trafficOverTime'],
             'Enquiries by service' => $charts['enquiriesByService'],
             'Leads by status' => $charts['leadsByStatus'],
+            'Payments by status' => $charts['paymentsByStatus'],
+            'Payments by product' => $charts['paymentsByProduct'],
             'Most visited pages' => $charts['mostVisitedPages'],
             'Enquiries by country' => $charts['enquiriesByCountry'],
           ] as $title => $items)
@@ -105,7 +118,6 @@
               <div class="admin-panel-head">
                 <div>
                   <h3 class="font-display">{{ $title }}</h3>
-                  <p>Backed by database records.</p>
                 </div>
               </div>
               @if($chartHasData($items))
@@ -159,7 +171,9 @@
           </article>
         </div>
       </section>
+      @endif
 
+      @if($section === 'enquiries')
       <section class="admin-section" id="enquiries">
         <div class="admin-section-head">
           <div>
@@ -169,8 +183,7 @@
           <a class="btn btn-ghost btn-sm" href="{{ route('admin.enquiries.export', request()->query()) }}">Export CSV</a>
         </div>
 
-        <form class="admin-filter-bar" method="GET" action="{{ route('admin.dashboard') }}">
-          <input type="hidden" name="section" value="enquiries">
+        <form class="admin-filter-bar" method="GET" action="{{ route('admin.enquiries.index') }}">
           <input class="field" name="q" value="{{ request('q') }}" placeholder="Search name, email, company, or message">
           <select class="field" name="status">
             <option value="">All statuses</option>
@@ -263,7 +276,9 @@
 
         <div class="admin-pagination">{{ $enquiries->links() }}</div>
       </section>
+      @endif
 
+      @if($section === 'leads')
       <section class="admin-section" id="leads">
         <div class="admin-section-head">
           <div>
@@ -338,7 +353,9 @@
           @endforeach
         </div>
       </section>
+      @endif
 
+      @if($section === 'consultations')
       <section class="admin-section" id="consultations">
         <div class="admin-section-head">
           <div>
@@ -412,7 +429,9 @@
           </table>
         </div>
       </section>
+      @endif
 
+      @if($section === 'content')
       <section class="admin-section" id="content">
         <div class="admin-section-head">
           <div>
@@ -480,55 +499,104 @@
           @endforelse
         </div>
       </section>
+      @endif
 
-      <section class="admin-section" id="support">
+      @if($section === 'live-chats')
+      <section class="admin-section" id="live-chats">
         <div class="admin-section-head">
           <div>
-            <h2 class="font-display">Live Chat & Payments</h2>
-            <p>Review chat conversations, assign support ownership, mark sessions read, and monitor payment records.</p>
+            <h2 class="font-display">Live Chats</h2>
+            <p>Review website chat conversations, assign support ownership, mark sessions read, and keep internal notes for follow-up.</p>
           </div>
         </div>
 
-        <div class="admin-grid">
-          <article class="admin-panel">
-            <div class="admin-panel-head">
-              <div>
-                <h3 class="font-display">Live Chat Sessions</h3>
-                <p>{{ $chatSessions->count() }} conversation{{ $chatSessions->count() === 1 ? '' : 's' }} stored.</p>
-              </div>
+        <article class="admin-panel">
+          <div class="admin-panel-head">
+            <div>
+              <h3 class="font-display">Live Chat Sessions</h3>
+              <p>{{ $chatSessions->count() }} conversation{{ $chatSessions->count() === 1 ? '' : 's' }} stored.</p>
             </div>
-            <div class="admin-list compact">
-              @forelse($chatSessions as $sessionId => $messages)
-                <article class="admin-message">
-                  <div class="admin-message-head">
-                    <strong class="font-mono">{{ \Illuminate\Support\Str::limit($sessionId, 18) }}</strong>
-                    <span>{{ $messages->first()->created_at->format('M j, g:ia') }}</span>
-                  </div>
-                  <div class="admin-chat-log">
-                    @foreach($messages->reverse()->take(5) as $chat)
-                      <p><span>{{ ucfirst($chat->sender) }}</span>{{ $chat->message }}</p>
-                    @endforeach
-                  </div>
-                  <form class="admin-record-form full" method="POST" action="{{ route('admin.chat.update', $sessionId) }}">
-                    @csrf
-                    @method('PATCH')
-                    <input class="field" name="assigned_to" value="{{ $messages->first()->assigned_to }}" placeholder="Assigned agent">
-                    <textarea class="field" name="internal_notes" placeholder="Internal chat notes">{{ $messages->first()->internal_notes }}</textarea>
-                    <label class="admin-check"><input type="checkbox" name="is_read" value="1" @checked($messages->every(fn ($message) => $message->is_read))><span>Mark session read</span></label>
-                    <button class="btn btn-ghost btn-sm" type="submit">Save Chat</button>
-                  </form>
-                </article>
-              @empty
-                <p class="admin-empty">No live-chat messages yet.</p>
-              @endforelse
-            </div>
-          </article>
+          </div>
+          <div class="admin-list compact">
+            @forelse($chatSessions as $sessionId => $messages)
+              @php
+                $orderedMessages = $messages->sortBy('created_at');
+                $latestMessage = $orderedMessages->last();
+                $sessionMeta = $messages->firstWhere('assigned_to') ?? $messages->first();
+                $sourceMessage = $messages->firstWhere('source_url');
+                $unreadCount = $messages->where('sender', 'user')->where('is_read', false)->count();
+              @endphp
+              <article class="admin-message">
+                <div class="admin-message-head">
+                  <strong class="font-mono">{{ \Illuminate\Support\Str::limit($sessionId, 18) }}</strong>
+                  <span>{{ $latestMessage?->created_at->format('M j, g:ia') }}</span>
+                </div>
+                @if($unreadCount > 0)
+                  <span class="admin-badge">{{ $unreadCount }} unread visitor message{{ $unreadCount === 1 ? '' : 's' }}</span>
+                @endif
+                @if($sourceMessage?->source_url)
+                  <p class="admin-chat-source">
+                    Source:
+                    <a href="{{ $sourceMessage->source_url }}" target="_blank" rel="noopener">
+                      {{ $sourceMessage->source_title ?: \Illuminate\Support\Str::limit($sourceMessage->source_url, 80) }}
+                    </a>
+                  </p>
+                @endif
+                <div class="admin-chat-log">
+                  @foreach($orderedMessages->take(-8) as $chat)
+                    <p class="{{ $chat->sender === 'support' ? 'support' : 'visitor' }}">
+                      <span>{{ $chat->sender === 'support' ? 'Support' : 'Visitor' }} · {{ $chat->created_at->format('M j, g:ia') }}</span>{{ $chat->message }}
+                    </p>
+                  @endforeach
+                </div>
+                <form class="admin-record-form full admin-chat-reply-form" method="POST" action="{{ route('admin.chat.reply', $sessionId) }}">
+                  @csrf
+                  <label class="field-label">Reply to visitor</label>
+                  <textarea class="field" name="message" placeholder="Write a real support reply that will appear in the visitor chat window." required></textarea>
+                  <button class="btn btn-primary btn-sm" type="submit">Send Reply</button>
+                </form>
+                <form class="admin-record-form full" method="POST" action="{{ route('admin.chat.update', $sessionId) }}">
+                  @csrf
+                  @method('PATCH')
+                  <input class="field" name="assigned_to" value="{{ $sessionMeta?->assigned_to }}" placeholder="Assigned agent">
+                  <textarea class="field" name="internal_notes" placeholder="Internal chat notes">{{ $sessionMeta?->internal_notes }}</textarea>
+                  <label class="admin-check"><input type="checkbox" name="is_read" value="1" @checked($messages->every(fn ($message) => $message->is_read))><span>Mark session read</span></label>
+                  <button class="btn btn-ghost btn-sm" type="submit">Save Chat</button>
+                </form>
+              </article>
+            @empty
+              <p class="admin-empty">No live-chat messages yet.</p>
+            @endforelse
+          </div>
+        </article>
+      </section>
+      @endif
 
+      @if($section === 'payments')
+      <section class="admin-section" id="payments">
+        <div class="admin-section-head">
+          <div>
+            <h2 class="font-display">Payments & Navkwa Build Subscriptions</h2>
+            <p>Monitor real payment transactions and connect each payment to its subscription plan. Customers start new Navkwa Build payments from the product page.</p>
+          </div>
+        </div>
+
+        <div class="admin-metric-grid">
+          @foreach($paymentStats as $metric)
+            <article class="admin-metric-card">
+              <span>{{ $metric['label'] }}</span>
+              <strong>{{ $metric['value'] }}</strong>
+              <p>{{ $metric['hint'] }}</p>
+            </article>
+          @endforeach
+        </div>
+
+        <div class="admin-grid admin-grid-single">
           <article class="admin-panel">
             <div class="admin-panel-head">
               <div>
-                <h3 class="font-display">Payments</h3>
-                <p>{{ $payments->count() }} recent transaction{{ $payments->count() === 1 ? '' : 's' }}.</p>
+                <h3 class="font-display">Payment Transactions</h3>
+                <p>{{ $payments->count() }} recent transaction{{ $payments->count() === 1 ? '' : 's' }} across website payments and Navkwa Build subscriptions.</p>
               </div>
             </div>
             <div class="admin-list compact">
@@ -541,10 +609,19 @@
                   <p>{{ $payment->customer_name }} | {{ $payment->currency }} {{ number_format((float) $payment->amount, 2) }}</p>
                   <dl>
                     <div><dt>Status</dt><dd>{{ ucfirst($payment->status) }}</dd></div>
+                    <div><dt>Product</dt><dd>{{ $payment->productLabel() }}</dd></div>
+                    <div><dt>Subscription</dt><dd>{{ $payment->subscriptionLabel() }}</dd></div>
                     <div><dt>Method</dt><dd>{{ str_replace('_', ' ', ucfirst($payment->payment_method)) }}</dd></div>
                     <div><dt>Email</dt><dd>{{ $payment->customer_email }}</dd></div>
                     <div><dt>Phone</dt><dd>{{ $payment->customer_phone ?: 'Not provided' }}</dd></div>
+                    <div><dt>Paid At</dt><dd>{{ optional($payment->paid_at)->format('M j, g:ia') ?: 'Not confirmed' }}</dd></div>
+                    <div><dt>Gateway Ref</dt><dd>{{ $payment->provider_reference ?: 'Not confirmed' }}</dd></div>
                   </dl>
+                  <div class="admin-record-actions">
+                    @if($payment->checkout_url && $payment->status === 'pending')
+                      <a class="btn btn-primary btn-sm" href="{{ $payment->checkout_url }}" target="_blank" rel="noreferrer">Resume Payment</a>
+                    @endif
+                  </div>
                 </article>
               @empty
                 <p class="admin-empty">No payment transactions yet.</p>
@@ -553,7 +630,9 @@
           </article>
         </div>
       </section>
+      @endif
 
+      @if($section === 'careers')
       <section class="admin-section" id="careers">
         <div class="admin-section-head">
           <div>
@@ -628,7 +707,9 @@
           </table>
         </div>
       </section>
+      @endif
 
+      @if($section === 'marketing')
       <section class="admin-section" id="marketing">
         <div class="admin-section-head">
           <div>
@@ -671,7 +752,9 @@
           </table>
         </div>
       </section>
+      @endif
 
+      @if($section === 'management')
       <section class="admin-section" id="management">
         <div class="admin-section-head">
           <div>
@@ -705,7 +788,7 @@
 
         <div class="admin-table-wrap">
           <table class="admin-table">
-            <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Last Login</th></tr></thead>
+            <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
             <tbody>
               @forelse($users as $user)
                 <tr>
@@ -713,15 +796,57 @@
                   <td>{{ $user->role }}</td>
                   <td><span class="admin-badge">{{ ucfirst($user->account_status) }}</span></td>
                   <td>{{ optional($user->last_login_at)->format('M j, Y g:ia') ?: 'Never' }}</td>
+                  <td>
+                    <div class="admin-record-actions compact">
+                      <a class="btn btn-ghost btn-sm" href="#user-edit-{{ $user->id }}">Edit</a>
+                      @if(!auth()->user()->is($user))
+                        <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this staff user?');">
+                          @csrf
+                          @method('DELETE')
+                          <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                        </form>
+                      @else
+                        <span class="admin-muted">Current account</span>
+                      @endif
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="5" id="user-edit-{{ $user->id }}" class="admin-edit-cell">
+                    <form class="admin-user-edit-form" method="POST" action="{{ route('admin.users.update', $user) }}">
+                      @csrf
+                      @method('PATCH')
+                      <div class="admin-form-grid">
+                        <input class="field" name="name" value="{{ $user->name }}" placeholder="Full name" required>
+                        <input class="field" type="email" name="email" value="{{ $user->email }}" placeholder="Email" required>
+                        <input class="field" name="phone" value="{{ $user->phone }}" placeholder="Phone">
+                        <input class="field" name="job_title" value="{{ $user->job_title }}" placeholder="Job title">
+                        <input class="field" name="department" value="{{ $user->department }}" placeholder="Department">
+                        <select class="field" name="role">
+                          @foreach($userRoles as $role)
+                            <option value="{{ $role }}" @selected($user->role === $role)>{{ $role }}</option>
+                          @endforeach
+                        </select>
+                        <select class="field" name="account_status">
+                          <option value="active" @selected($user->account_status === 'active')>Active</option>
+                          <option value="suspended" @selected($user->account_status === 'suspended')>Suspended</option>
+                        </select>
+                        <input class="field" type="password" name="password" placeholder="New password (leave blank to keep existing)">
+                      </div>
+                      <button class="btn btn-primary btn-sm" type="submit">Save Changes</button>
+                    </form>
+                  </td>
                 </tr>
               @empty
-                <tr><td colspan="4">No staff users yet.</td></tr>
+                <tr><td colspan="5">No staff users yet.</td></tr>
               @endforelse
             </tbody>
           </table>
         </div>
       </section>
+      @endif
 
+      @if($section === 'system')
       <section class="admin-section" id="system">
         <div class="admin-section-head">
           <div>
@@ -736,8 +861,8 @@
           <h3 class="font-display">System Settings</h3>
           <div class="admin-form-grid">
             <input class="field" name="settings[company_name]" value="{{ $setting('company_name', 'Navkwa Group Ltd.') }}" placeholder="Company name">
-            <input class="field" type="email" name="settings[company_email]" value="{{ $setting('company_email', 'contact@navkwagroup.com') }}" placeholder="Company email">
-            <input class="field" name="settings[company_phone]" value="{{ $setting('company_phone') }}" placeholder="Phone">
+            <input class="field" type="email" name="settings[company_email]" value="{{ $setting('company_email', 'owusu-sekyere@navkwa.com') }}" placeholder="Company email">
+            <input class="field" name="settings[company_phone]" value="{{ $setting('company_phone', '+233553544198') }}" placeholder="Phone">
             <input class="field" name="settings[office_address]" value="{{ $setting('office_address', 'Accra, Ghana') }}" placeholder="Office address">
             <input class="field" name="settings[business_hours]" value="{{ $setting('business_hours', 'Weekdays 8am-8pm GMT') }}" placeholder="Business hours">
             <input class="field" type="url" name="settings[website_url]" value="{{ $setting('website_url', url('/')) }}" placeholder="Website URL">
@@ -768,6 +893,7 @@
           </div>
         </article>
       </section>
+      @endif
     </div>
   </main>
 </body>

@@ -9,6 +9,9 @@ class PaymentTransaction extends Model
     protected $fillable = [
         'reference',
         'provider',
+        'product',
+        'plan',
+        'billing_cycle',
         'payment_method',
         'mobile_network',
         'amount',
@@ -43,7 +46,32 @@ class PaymentTransaction extends Model
         $this->forceFill([
             'status' => 'paid',
             'provider_payload' => $payload ?: $this->provider_payload,
-            'paid_at' => now(),
+            'paid_at' => $this->paid_at ?: now(),
         ])->save();
+    }
+
+    public function planName(): ?string
+    {
+        if ($this->product !== 'navkwa_build' || blank($this->plan)) {
+            return null;
+        }
+
+        return config("navkwa_build.plans.{$this->plan}.name");
+    }
+
+    public function productLabel(): string
+    {
+        return $this->product === 'navkwa_build' ? 'Navkwa Build subscription' : 'General payment';
+    }
+
+    public function subscriptionLabel(): string
+    {
+        $planName = $this->planName();
+
+        if (! $planName) {
+            return 'Not applicable';
+        }
+
+        return trim($planName.' '.($this->billing_cycle ? '('.ucfirst($this->billing_cycle).')' : ''));
     }
 }

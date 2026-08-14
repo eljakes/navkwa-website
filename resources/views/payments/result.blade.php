@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Status - Navkwa Group Ltd.</title>
+  <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+  <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
+  <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
   <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}">
 </head>
 <body class="payment-page">
@@ -14,6 +17,10 @@
         <h1 class="font-display">Payment {{ ucfirst($payment->status) }}</h1>
         <p>Reference: <strong>{{ $payment->reference }}</strong></p>
         <p>Amount: <strong>{{ $payment->currency }} {{ number_format((float) $payment->amount, 2) }}</strong></p>
+        <p>Provider: <strong>{{ ucfirst($payment->provider) }}</strong></p>
+        @if($payment->product === 'navkwa_build')
+          <p>Product: <strong>Navkwa Build {{ $payment->planName() }} {{ $payment->billing_cycle ? ucfirst($payment->billing_cycle) : '' }}</strong></p>
+        @endif
       @else
         <h1 class="font-display">Payment Pending</h1>
         <p>We could not match this callback to a local payment record. Check the provider dashboard and transaction reference.</p>

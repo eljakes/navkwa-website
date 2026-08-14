@@ -13,12 +13,14 @@ class ChatMessageController extends Controller
     {
         $validated = $request->validate([
             'session_id' => ['required', 'string', 'max:120'],
+            'after_id' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $messages = ChatMessage::query()
             ->where('session_id', $validated['session_id'])
+            ->when($validated['after_id'] ?? null, fn ($query, $afterId) => $query->where('id', '>', $afterId))
             ->oldest()
-            ->get(['sender', 'message', 'created_at']);
+            ->get(['id', 'sender', 'message', 'created_at']);
 
         return response()->json([
             'messages' => $messages,
@@ -30,6 +32,8 @@ class ChatMessageController extends Controller
         $validated = $request->validate([
             'session_id' => ['nullable', 'string', 'max:120'],
             'message' => ['required', 'string', 'max:2000'],
+            'source_url' => ['nullable', 'string', 'max:2048'],
+            'source_title' => ['nullable', 'string', 'max:180'],
         ]);
 
         $sessionId = ($validated['session_id'] ?? null) ?: (string) Str::uuid();
@@ -38,12 +42,8 @@ class ChatMessageController extends Controller
             'session_id' => $sessionId,
             'sender' => 'user',
             'message' => $validated['message'],
-        ]);
-
-        $reply = ChatMessage::create([
-            'session_id' => $sessionId,
-            'sender' => 'support',
-            'message' => 'Thanks. Your message has been received by Navkwa. Please leave your email or phone number if you want the team to follow up directly.',
+            'source_url' => $validated['source_url'] ?? $request->headers->get('referer'),
+            'source_title' => $validated['source_title'] ?? null,
         ]);
 
         ActivityLog::create([
@@ -51,7 +51,11 @@ class ChatMessageController extends Controller
             'module' => 'Support',
             'record_type' => ChatMessage::class,
             'record_id' => $userMessage->id,
-            'new_values' => ['session_id' => $sessionId],
+            'new_values' => [
+                'session_id' => $sessionId,
+                'source_url' => $userMessage->source_url,
+                'source_title' => $userMessage->source_title,
+            ],
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
@@ -59,8 +63,7 @@ class ChatMessageController extends Controller
         return response()->json([
             'session_id' => $sessionId,
             'messages' => [
-                $userMessage->only(['sender', 'message', 'created_at']),
-                $reply->only(['sender', 'message', 'created_at']),
+                $userMessage->only(['id', 'sender', 'message', 'created_at']),
             ],
         ], 201);
     }
